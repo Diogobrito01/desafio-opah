@@ -33,7 +33,7 @@ Sistema de controle de fluxo de caixa com arquitetura de microsserviços, desenv
 
 ```bash
 # Clonar repositório
-git clone https://github.com/seu-usuario/desafio-opah.git
+git clone https://github.com/Diogobrito01/desafio-opah.git
 cd desafio-opah
 
 # Subir stack completa
