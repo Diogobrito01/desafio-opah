@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: cashflow-postgres
+    environment:
+      POSTGRES_USER: cashflow
+      POSTGRES_PASSWORD: cashflow123
+      POSTGRES_DB: cashflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cashflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cashflow-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: cashflow-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cashflow-network
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: cashflow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: cashflow
+      RABBITMQ_DEFAULT_PASS: cashflow123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cashflow-network
+
+  # Transactions API
+  transactions-api:
+    build:
+      context: .
+      dockerfile: src/Services/Transactions/CashFlow.Transactions.API/Dockerfile
+    container_name: cashflow-transactions-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=cashflow_transactions;Username=cashflow;Password=cashflow123
+      - ConnectionStrings__Redis=redis:6379
+      - MessageBroker__Host=rabbitmq
+      - MessageBroker__Username=cashflow
+      - MessageBroker__Password=cashflow123
+    ports:
+      - "5001:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - cashflow-network
+
+  # Consolidation API
+  consolidation-api:
+    build:
+      context: .
+      dockerfile: src/Services/Consolidation/CashFlow.Consolidation.API/Dockerfile
+    container_name: cashflow-consolidation-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=cashflow_consolidation;Username=cashflow;Password=cashflow123
+      - ConnectionStrings__TransactionsConnection=Host=postgres;Database=cashflow_transactions;Username=cashflow;Password=cashflow123
+      - ConnectionStrings__Redis=redis:6379
+    ports:
+      - "5002:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cashflow-network
+
+  # Consolidation Worker
+  consolidation-worker:
+    build:
+      context: .
+      dockerfile: src/Services/Consolidation/CashFlow.Consolidation.Worker/Dockerfile
+    container_name: cashflow-consolidation-worker
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=cashflow_consolidation;Username=cashflow;Password=cashflow123
+      - ConnectionStrings__Redis=redis:6379
+      - MessageBroker__Host=rabbitmq
+      - MessageBroker__Username=cashflow
+      - MessageBroker__Password=cashflow123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - cashflow-network
+
+networks:
+  cashflow-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:

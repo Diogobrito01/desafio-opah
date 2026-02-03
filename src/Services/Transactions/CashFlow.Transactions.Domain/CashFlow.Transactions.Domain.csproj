@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\CashFlow.BuildingBlocks.Core\CashFlow.BuildingBlocks.Core.csproj" />
+  </ItemGroup>
+
+</Project>

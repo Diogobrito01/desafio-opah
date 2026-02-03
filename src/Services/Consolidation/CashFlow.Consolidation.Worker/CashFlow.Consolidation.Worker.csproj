@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CashFlow.Consolidation.Application\CashFlow.Consolidation.Application.csproj" />
+    <ProjectReference Include="..\CashFlow.Consolidation.Infrastructure\CashFlow.Consolidation.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\CashFlow.BuildingBlocks.EventBus\CashFlow.BuildingBlocks.EventBus.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Polly" Version="8.2.1" />
+  </ItemGroup>
+
+</Project>
